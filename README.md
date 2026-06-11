@@ -98,6 +98,8 @@ build/libs/KomsomolChatBridge-1.0-SNAPSHOT.jar
 2. Правой кнопкой нажмите на нужный канал.
 3. Выберите `Copy Channel ID`.
 4. Вставьте значение в `discord.channel_id`.
+5. Для консольного канала вставьте отдельный ID в `discord.console_channel_id`.
+6. Для команды `/bridge discord` укажите ссылку в `discord.discord_invite_link`.
 
 Если используете webhook для Minecraft-сообщений:
 
@@ -163,6 +165,7 @@ Telegram → Minecraft:
 
 ```text
 /bridge status
+/bridge discord
 /bridge test discord
 /bridge test telegram
 ```
@@ -173,7 +176,7 @@ Telegram → Minecraft:
 - Проверьте `plugins/KomsomolChatBridge/config.yml`.
 - Включите `general.debug: true`.
 - Проверьте, что Discord bot token и Telegram bot token не пустые.
-- Проверьте `discord.channel_id` и `telegram.chat_id`.
+- Проверьте `discord.channel_id`, `discord.console_channel_id` и `telegram.chat_id`.
 - Для Discord включите `Message Content Intent`.
 - Убедитесь, что бот Discord имеет доступ к каналу.
 - Убедитесь, что Telegram-бот находится в группе.

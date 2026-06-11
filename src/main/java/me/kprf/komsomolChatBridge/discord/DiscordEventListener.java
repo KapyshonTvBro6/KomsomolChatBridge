@@ -8,14 +8,18 @@ import me.kprf.komsomolChatBridge.core.ChatBridgeService;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.function.Supplier;
 
 public final class DiscordEventListener extends ListenerAdapter {
+    private final JavaPlugin plugin;
     private final Supplier<BridgeConfig> configSupplier;
     private final ChatBridgeService chatBridgeService;
 
-    public DiscordEventListener(Supplier<BridgeConfig> configSupplier, ChatBridgeService chatBridgeService) {
+    public DiscordEventListener(JavaPlugin plugin, Supplier<BridgeConfig> configSupplier, ChatBridgeService chatBridgeService) {
+        this.plugin = plugin;
         this.configSupplier = configSupplier;
         this.chatBridgeService = chatBridgeService;
     }
@@ -26,14 +30,20 @@ public final class DiscordEventListener extends ListenerAdapter {
         if (!settings.enabled()) {
             return;
         }
-        if (!event.getChannel().getId().equals(settings.channelId())) {
-            return;
-        }
         Message discordMessage = event.getMessage();
         if (settings.ignoreBots() && event.getAuthor().isBot()) {
             return;
         }
         if (discordMessage.isWebhookMessage()) {
+            return;
+        }
+
+        String eventChannelId = event.getChannel().getId();
+        if (isSameChannel(eventChannelId, settings.consoleChannelId())) {
+            handleConsoleChannelMessage(settings, discordMessage);
+            return;
+        }
+        if (!isSameChannel(eventChannelId, settings.channelId())) {
             return;
         }
 
@@ -69,5 +79,40 @@ public final class DiscordEventListener extends ListenerAdapter {
                 .build();
 
         chatBridgeService.publish(bridgeMessage);
+    }
+
+    private void handleConsoleChannelMessage(BridgeConfig.DiscordSettings settings, Message discordMessage) {
+        if (!settings.consoleExecuteCommands()) {
+            return;
+        }
+
+        String commandLine = discordMessage.getContentRaw();
+        if (commandLine == null || commandLine.isBlank()) {
+            return;
+        }
+
+        String prefix = settings.consoleCommandPrefix();
+        if (prefix != null && !prefix.isBlank()) {
+            if (!commandLine.startsWith(prefix)) {
+                return;
+            }
+            commandLine = commandLine.substring(prefix.length()).trim();
+        }
+
+        if (commandLine.startsWith("/")) {
+            commandLine = commandLine.substring(1).trim();
+        }
+        if (commandLine.isBlank()) {
+            return;
+        }
+
+        String finalCommandLine = commandLine;
+        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommandLine));
+    }
+
+    private boolean isSameChannel(String eventChannelId, String configuredChannelId) {
+        return configuredChannelId != null
+                && !configuredChannelId.isBlank()
+                && eventChannelId.equals(configuredChannelId);
     }
 }

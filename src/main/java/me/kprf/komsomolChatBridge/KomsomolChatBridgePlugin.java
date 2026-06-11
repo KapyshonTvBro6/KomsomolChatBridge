@@ -183,7 +183,7 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
 
         MinecraftMessageSender minecraftSender = new MinecraftMessageSender(this, this::bridgeConfig);
         DiscordWebhookSender webhookSender = new DiscordWebhookSender(this::bridgeConfig);
-        discordBridgeClient = new DiscordBridgeClient(this::bridgeConfig, chatBridgeService, getLogger()::info, this::logError);
+        discordBridgeClient = new DiscordBridgeClient(this, this::bridgeConfig, chatBridgeService, getLogger()::info, this::logError);
         telegramBridgeClient = new TelegramBridgeClient(this::bridgeConfig, chatBridgeService, executorService, getLogger()::info, this::logError);
 
         chatBridgeService.registerSender(BridgePlatform.MINECRAFT, minecraftSender);

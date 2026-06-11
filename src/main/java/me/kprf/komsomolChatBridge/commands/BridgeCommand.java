@@ -9,7 +9,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +35,7 @@ public final class BridgeCommand implements CommandExecutor, TabCompleter {
             case "test" -> test(sender, args);
             case "mute" -> mute(sender, args, true);
             case "unmute" -> mute(sender, args, false);
-            case "link" -> link(sender, args);
-            case "unlink" -> unlink(sender);
+            case "discord", "invite" -> discordInvite(sender);
             default -> {
                 sendHelp(sender);
                 yield true;
@@ -48,9 +46,9 @@ public final class BridgeCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(List.of("status", "reload", "test", "mute", "unmute", "link", "unlink", "help"), args[0]);
+            return filter(List.of("status", "reload", "test", "mute", "unmute", "discord", "invite", "help"), args[0]);
         }
-        if (args.length == 2 && List.of("test", "mute", "unmute", "link").contains(args[0].toLowerCase(Locale.ROOT))) {
+        if (args.length == 2 && List.of("test", "mute", "unmute").contains(args[0].toLowerCase(Locale.ROOT))) {
             return filter(List.of("discord", "telegram"), args[1]);
         }
         return List.of();
@@ -130,25 +128,13 @@ public final class BridgeCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean link(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player)) {
-            plugin.messagesConfig().send(sender, "commands.player_only");
+    private boolean discordInvite(CommandSender sender) {
+        String inviteLink = plugin.bridgeConfig().discord().discordInviteLink();
+        if (inviteLink == null || inviteLink.isBlank()) {
+            plugin.messagesConfig().send(sender, "commands.discord_invite_missing");
             return true;
         }
-        BridgePlatform platform = platformArg(sender, args);
-        if (platform == null) {
-            return true;
-        }
-        plugin.messagesConfig().send(sender, "commands.link_stub", Map.of("platform", platform.displayName()));
-        return true;
-    }
-
-    private boolean unlink(CommandSender sender) {
-        if (!(sender instanceof Player)) {
-            plugin.messagesConfig().send(sender, "commands.player_only");
-            return true;
-        }
-        plugin.messagesConfig().send(sender, "commands.unlink_stub");
+        plugin.messagesConfig().send(sender, "commands.discord_invite", Map.of("url", inviteLink));
         return true;
     }
 

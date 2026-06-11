@@ -9,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 
 public final class BridgeConfig {
     private final GeneralSettings general;
@@ -75,12 +76,15 @@ public final class BridgeConfig {
 
         DiscordSettings discord = new DiscordSettings(
                 config.getBoolean("discord.enabled", true),
-                config.getString("discord.bot_token", ""),
-                config.getString("discord.guild_id", ""),
-                config.getString("discord.channel_id", ""),
+                optionalConfigValue(config, "discord.bot_token", "PASTE_DISCORD_BOT_TOKEN_HERE"),
+                optionalConfigValue(config, "discord.channel_id", "PASTE_DISCORD_CHAT_CHANNEL_ID_HERE"),
+                optionalConfigValue(config, "discord.console_channel_id", "PASTE_DISCORD_CONSOLE_CHANNEL_ID_HERE"),
+                optionalConfigValue(config, "discord.discord_invite_link", "https://discord.gg/your-invite"),
                 config.getBoolean("discord.ignore_bots", true),
+                config.getBoolean("discord.console_execute_commands", true),
+                config.getString("discord.console_command_prefix", ""),
                 config.getBoolean("discord.use_webhook_for_minecraft_messages", true),
-                config.getString("discord.webhook_url", ""),
+                optionalConfigValue(config, "discord.webhook_url", "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN"),
                 config.getString("discord.webhook_avatar_url", "https://mc-heads.net/avatar/{player}/128"),
                 config.getString("discord.format_from_minecraft", MessageFormatter.FormatSettings.defaults().discordFromMinecraft()),
                 config.getString("discord.format_from_telegram", MessageFormatter.FormatSettings.defaults().discordFromTelegram()),
@@ -96,8 +100,8 @@ public final class BridgeConfig {
         );
         TelegramSettings telegram = new TelegramSettings(
                 config.getBoolean("telegram.enabled", true),
-                config.getString("telegram.bot_token", ""),
-                config.getString("telegram.chat_id", ""),
+                optionalConfigValue(config, "telegram.bot_token", "PASTE_TELEGRAM_BOT_TOKEN_HERE"),
+                optionalConfigValue(config, "telegram.chat_id", "PASTE_TELEGRAM_CHAT_ID_HERE"),
                 config.getString("telegram.mode", "LONG_POLLING"),
                 webhook,
                 config.getBoolean("telegram.ignore_bots", true),
@@ -141,6 +145,33 @@ public final class BridgeConfig {
         );
 
         return new BridgeConfig(general, minecraft, discord, telegram, antiSpam, loopProtection, filters, systemEvents, storage);
+    }
+
+    private static String optionalConfigValue(FileConfiguration config, String path, String defaultValue) {
+        String value = config.getString(path, defaultValue);
+        if (value == null) {
+            return "";
+        }
+
+        String trimmed = value.trim();
+        if (isInlineExample(trimmed)) {
+            return "";
+        }
+        return trimmed;
+    }
+
+    private static boolean isInlineExample(String value) {
+        String normalized = value.toLowerCase(Locale.ROOT);
+        return normalized.isBlank()
+                || normalized.startsWith("paste_")
+                || normalized.contains("_here")
+                || normalized.contains("webhook_id")
+                || normalized.contains("webhook_token")
+                || normalized.contains("<token>")
+                || normalized.equals("https://discord.gg/your-invite")
+                || normalized.equals("https://discord.com/invite/your-invite")
+                || normalized.equals("https://discord.gg/example")
+                || normalized.contains("example.com");
     }
 
     public void applyToRouter(me.kprf.komsomolChatBridge.core.MessageRouter router) {
@@ -244,9 +275,12 @@ public final class BridgeConfig {
     public record DiscordSettings(
             boolean enabled,
             String botToken,
-            String guildId,
             String channelId,
+            String consoleChannelId,
+            String discordInviteLink,
             boolean ignoreBots,
+            boolean consoleExecuteCommands,
+            String consoleCommandPrefix,
             boolean useWebhookForMinecraftMessages,
             String webhookUrl,
             String webhookAvatarUrl,

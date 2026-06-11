@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -14,6 +15,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class DiscordBridgeClient {
+    private final JavaPlugin plugin;
     private final Supplier<BridgeConfig> configSupplier;
     private final ChatBridgeService chatBridgeService;
     private final Consumer<String> infoLogger;
@@ -21,11 +23,13 @@ public final class DiscordBridgeClient {
     private volatile JDA jda;
 
     public DiscordBridgeClient(
+            JavaPlugin plugin,
             Supplier<BridgeConfig> configSupplier,
             ChatBridgeService chatBridgeService,
             Consumer<String> infoLogger,
             BiConsumer<String, Throwable> errorLogger
     ) {
+        this.plugin = plugin;
         this.configSupplier = configSupplier;
         this.chatBridgeService = chatBridgeService;
         this.infoLogger = infoLogger == null ? ignored -> { } : infoLogger;
@@ -42,8 +46,8 @@ public final class DiscordBridgeClient {
             infoLogger.accept("Discord bot_token пустой, Discord-клиент не запускается.");
             return;
         }
-        if (settings.channelId() == null || settings.channelId().isBlank()) {
-            infoLogger.accept("Discord channel_id пустой, Discord-клиент не запускается.");
+        if (!hasChatChannel(settings) && !hasConsoleChannel(settings)) {
+            infoLogger.accept("Discord channel_id и console_channel_id пустые, Discord-клиент не запускается.");
             return;
         }
 
@@ -52,7 +56,7 @@ public final class DiscordBridgeClient {
             jda = JDABuilder.createDefault(settings.botToken())
                     .enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                     .setAutoReconnect(true)
-                    .addEventListeners(new DiscordEventListener(configSupplier, chatBridgeService))
+                    .addEventListeners(new DiscordEventListener(plugin, configSupplier, chatBridgeService))
                     .build();
             infoLogger.accept("Discord-клиент запускается.");
         } catch (RuntimeException exception) {
@@ -71,11 +75,12 @@ public final class DiscordBridgeClient {
 
     public boolean isConfigured() {
         BridgeConfig.DiscordSettings settings = configSupplier.get().discord();
-        return settings.enabled()
-                && settings.botToken() != null
-                && !settings.botToken().isBlank()
-                && settings.channelId() != null
-                && !settings.channelId().isBlank();
+        return settings.enabled() && hasToken(settings) && hasChatChannel(settings);
+    }
+
+    public boolean isConsoleConfigured() {
+        BridgeConfig.DiscordSettings settings = configSupplier.get().discord();
+        return settings.enabled() && hasToken(settings) && hasConsoleChannel(settings);
     }
 
     public boolean isConnected() {
@@ -91,7 +96,13 @@ public final class DiscordBridgeClient {
             return future;
         }
 
-        TextChannel channel = current.getTextChannelById(configSupplier.get().discord().channelId());
+        BridgeConfig.DiscordSettings settings = configSupplier.get().discord();
+        if (!hasChatChannel(settings)) {
+            future.completeExceptionally(new IllegalStateException("Discord channel_id пустой."));
+            return future;
+        }
+
+        TextChannel channel = current.getTextChannelById(settings.channelId());
         if (channel == null) {
             future.completeExceptionally(new IllegalStateException("Discord channel_id не найден или недоступен."));
             return future;
@@ -102,5 +113,17 @@ public final class DiscordBridgeClient {
                 future::completeExceptionally
         );
         return future;
+    }
+
+    private boolean hasToken(BridgeConfig.DiscordSettings settings) {
+        return settings.botToken() != null && !settings.botToken().isBlank();
+    }
+
+    private boolean hasChatChannel(BridgeConfig.DiscordSettings settings) {
+        return settings.channelId() != null && !settings.channelId().isBlank();
+    }
+
+    private boolean hasConsoleChannel(BridgeConfig.DiscordSettings settings) {
+        return settings.consoleChannelId() != null && !settings.consoleChannelId().isBlank();
     }
 }
