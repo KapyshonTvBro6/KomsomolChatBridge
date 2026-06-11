@@ -62,4 +62,19 @@ class MessageFormatterTest {
         assertEquals(":white_check_mark: **Server has started**", formatter.format(message, BridgePlatform.DISCORD));
         assertEquals("✅ <b>Сервер KomsomolCraft запущен!</b>", formatter.format(message, BridgePlatform.TELEGRAM));
     }
+
+    @Test
+    void metadataPlayerOverridesSystemDisplayName() {
+        MessageFormatter formatter = new MessageFormatter();
+        BridgeMessage message = BridgeMessage.builder(BridgePlatform.SYSTEM)
+                .sourceUserName("Minecraft")
+                .plainText("Player joined")
+                .metadata("system_key", "join")
+                .metadata("player", "KapyshonTvBro6")
+                .metadata("server", "KomsomolCraft")
+                .build();
+
+        assertEquals("KapyshonTvBro6 вошёл на сервер", formatter.format(message, BridgePlatform.DISCORD));
+        assertEquals("🥳 <b>KapyshonTvBro6 зашёл на KomsomolCraft</b>", formatter.format(message, BridgePlatform.TELEGRAM));
+    }
 }

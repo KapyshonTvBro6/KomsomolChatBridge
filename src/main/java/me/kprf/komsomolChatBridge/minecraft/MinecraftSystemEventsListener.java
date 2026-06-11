@@ -88,7 +88,7 @@ public final class MinecraftSystemEventsListener implements Listener {
         Map<String, String> values = addServer(placeholders);
         String message = messagesConfig.systemMessage(key, values);
         BridgeMessage.Builder builder = BridgeMessage.builder(BridgePlatform.SYSTEM)
-                .sourceUserName("Minecraft")
+                .sourceUserName(values.getOrDefault("player", "Minecraft"))
                 .plainText(message)
                 .formattedText(message)
                 .system(true)

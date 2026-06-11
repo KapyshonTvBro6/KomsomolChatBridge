@@ -101,6 +101,8 @@ build/libs/KomsomolChatBridge-1.0-SNAPSHOT.jar
 5. Для консольного канала вставьте отдельный ID в `discord.console_channel_id`.
 6. Для команды `/bridge discord` укажите ссылку в `discord.discord_invite_link`.
 7. Форматы старта, остановки, входа, выхода, смерти и достижений меняются в `discord.system_messages`.
+8. `discord.use_embeds_for_player_events: true` включает карточки входа, выхода, смерти и достижений.
+9. Для красивого Minecraft-чата от имени игрока заполните `discord.webhook_url`; текст задаёт `discord.webhook_message_format`.
 
 Если используете webhook для Minecraft-сообщений:
 

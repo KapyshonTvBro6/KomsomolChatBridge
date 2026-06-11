@@ -2,6 +2,8 @@ package me.kprf.komsomolChatBridge.discord;
 
 import me.kprf.komsomolChatBridge.config.BridgeConfig;
 import me.kprf.komsomolChatBridge.core.BridgeMessage;
+import me.kprf.komsomolChatBridge.core.MessageFormatter;
+import me.kprf.komsomolChatBridge.core.MentionService;
 
 import com.google.gson.JsonObject;
 
@@ -16,6 +18,7 @@ import java.util.function.Supplier;
 public final class DiscordWebhookSender {
     private final Supplier<BridgeConfig> configSupplier;
     private final HttpClient httpClient;
+    private final MentionService mentionService = new MentionService();
 
     public DiscordWebhookSender(Supplier<BridgeConfig> configSupplier) {
         this.configSupplier = configSupplier;
@@ -34,8 +37,8 @@ public final class DiscordWebhookSender {
     public CompletableFuture<String> send(BridgeMessage message) {
         BridgeConfig.DiscordSettings settings = configSupplier.get().discord();
         JsonObject payload = new JsonObject();
-        payload.addProperty("content", message.formattedText());
-        payload.addProperty("username", message.displayName());
+        payload.addProperty("content", format(settings.webhookMessageFormat(), message));
+        payload.addProperty("username", format(settings.webhookUsernameFormat(), message));
         String avatarUrl = settings.webhookAvatarUrl();
         if (avatarUrl != null && !avatarUrl.isBlank()) {
             payload.addProperty("avatar_url", avatarUrl.replace("{player}", message.displayName()));
@@ -54,5 +57,16 @@ public final class DiscordWebhookSender {
                     }
                     return "";
                 });
+    }
+
+    private String format(String template, BridgeMessage message) {
+        String rawMessage = MessageFormatter.escapeMarkdown(message.plainText());
+        rawMessage = mentionService.sanitizeDiscordMentions(rawMessage);
+        String player = MessageFormatter.escapeMarkdown(message.displayName());
+        String result = template == null || template.isBlank() ? "{message}" : template;
+        return result
+                .replace("{message}", rawMessage)
+                .replace("{player}", player)
+                .replace("{username}", player);
     }
 }

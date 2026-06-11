@@ -96,11 +96,23 @@ discord:
   # Отправляет Minecraft -> Discord через webhook от имени игрока.
   use_webhook_for_minecraft_messages: true
 
+  # Оформляет вход, выход, смерть и достижения embed-карточками.
+  use_embeds_for_player_events: true
+
   # Discord webhook URL для сообщений Minecraft -> Discord.
   webhook_url: "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN"
 
   # Аватар webhook-сообщений Minecraft.
   webhook_avatar_url: "https://mc-heads.net/avatar/{player}/128"
+
+  # Аватар embed-карточек игровых событий.
+  system_embed_avatar_url: "https://mc-heads.net/avatar/{player}/32"
+
+  # Текст webhook-сообщения Minecraft -> Discord.
+  webhook_message_format: "{message}"
+
+  # Имя автора webhook-сообщения Minecraft -> Discord.
+  webhook_username_format: "{player}"
 
   # Формат Minecraft -> Discord по стилю DiscordSRV.
   format_from_minecraft: "{player} » {message}"
@@ -115,10 +127,10 @@ discord:
   system_messages:
     server_start: ":white_check_mark: **Server has started**"
     server_stop: ":octagonal_sign: **Server has stopped**"
-    join: ":arrow_right: **{player} joined the server**"
-    quit: ":arrow_left: **{player} left the server**"
-    death: ":skull: **{death_message}**"
-    advancement: ":trophy: **{player} has made the advancement {advancement}!**"
+    join: "{player} вошёл на сервер"
+    quit: "{player} вышел с сервера"
+    death: "{death_message}"
+    advancement: "{player} получил достижение {advancement}"
 
   # Добавляет ссылки на вложения Discord к пересылаемому тексту.
   relay_attachments: false

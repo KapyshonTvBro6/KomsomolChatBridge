@@ -5,6 +5,8 @@ import me.kprf.komsomolChatBridge.core.BridgeMessage;
 import me.kprf.komsomolChatBridge.core.BridgeOutboundSender;
 import me.kprf.komsomolChatBridge.core.BridgePlatform;
 
+import net.dv8tion.jda.api.entities.MessageEmbed;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -26,6 +28,12 @@ public final class DiscordMessageSender implements BridgeOutboundSender {
     @Override
     public CompletableFuture<String> send(BridgeMessage message) {
         BridgeConfig.DiscordSettings settings = configSupplier.get().discord();
+        if (message.sourcePlatform() == BridgePlatform.SYSTEM) {
+            MessageEmbed embed = DiscordSystemEmbedFactory.create(message, settings);
+            if (embed != null) {
+                return discordBridgeClient.sendEmbed(embed);
+            }
+        }
         if (message.sourcePlatform() == BridgePlatform.MINECRAFT
                 && settings.useWebhookForMinecraftMessages()
                 && webhookSender.isConfigured()) {

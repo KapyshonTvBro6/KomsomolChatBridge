@@ -5,6 +5,7 @@ import me.kprf.komsomolChatBridge.core.ChatBridgeService;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -107,6 +108,19 @@ public final class DiscordBridgeClient {
     }
 
     public CompletableFuture<String> sendBotMessage(String text) {
+        return sendToChatChannel(channel -> channel.sendMessage(text));
+    }
+
+    public CompletableFuture<String> sendEmbed(MessageEmbed embed) {
+        if (embed == null) {
+            CompletableFuture<String> future = new CompletableFuture<>();
+            future.completeExceptionally(new IllegalArgumentException("Discord embed пустой."));
+            return future;
+        }
+        return sendToChatChannel(channel -> channel.sendMessageEmbeds(embed));
+    }
+
+    private CompletableFuture<String> sendToChatChannel(java.util.function.Function<TextChannel, net.dv8tion.jda.api.requests.restaction.MessageCreateAction> actionFactory) {
         CompletableFuture<String> future = new CompletableFuture<>();
         JDA current = jda;
         if (current == null) {
@@ -123,10 +137,14 @@ public final class DiscordBridgeClient {
         CompletableFuture<Void> waitForReady = current.getStatus() == JDA.Status.CONNECTED
                 ? CompletableFuture.completedFuture(null)
                 : readyFuture.thenRun(() -> { }).orTimeout(30, TimeUnit.SECONDS);
-        return waitForReady.thenCompose(ignored -> sendBotMessageNow(current, settings.channelId(), text));
+        return waitForReady.thenCompose(ignored -> sendBotMessageNow(current, settings.channelId(), actionFactory));
     }
 
-    private CompletableFuture<String> sendBotMessageNow(JDA current, String channelId, String text) {
+    private CompletableFuture<String> sendBotMessageNow(
+            JDA current,
+            String channelId,
+            java.util.function.Function<TextChannel, net.dv8tion.jda.api.requests.restaction.MessageCreateAction> actionFactory
+    ) {
         CompletableFuture<String> future = new CompletableFuture<>();
         TextChannel channel = current.getTextChannelById(channelId);
         if (channel == null) {
@@ -134,7 +152,7 @@ public final class DiscordBridgeClient {
             return future;
         }
 
-        channel.sendMessage(text).queue(
+        actionFactory.apply(channel).queue(
                 message -> future.complete(message.getId()),
                 future::completeExceptionally
         );

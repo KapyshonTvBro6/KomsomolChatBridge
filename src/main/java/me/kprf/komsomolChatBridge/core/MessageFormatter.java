@@ -35,14 +35,22 @@ public final class MessageFormatter {
                     "{message}",
                     Map.of(
                             "server_start", ":white_check_mark: **Server has started**",
-                            "server_stop", ":octagonal_sign: **Server has stopped**"
+                            "server_stop", ":octagonal_sign: **Server has stopped**",
+                            "join", "{player} вошёл на сервер",
+                            "quit", "{player} вышел с сервера",
+                            "death", "{death_message}",
+                            "advancement", "{player} получил достижение {advancement}"
                     ),
                     "<b>[💬 {player}]</b> {message}",
                     "<b>[💬 DS | {username}]</b> {message}",
                     "{message}",
                     Map.of(
                             "server_start", "✅ <b>Сервер {server} запущен!</b>",
-                            "server_stop", "❌ <b>Сервер {server} остановлен!</b>"
+                            "server_stop", "❌ <b>Сервер {server} остановлен!</b>",
+                            "join", "🥳 <b>{player} зашёл на {server}</b>",
+                            "quit", "😕 <b>{player} покинул {server}</b>",
+                            "death", "☠️ <b>{death_message}</b>",
+                            "advancement", "🏆 <b>{player} получил достижение «{advancement}»</b>"
                     )
             );
         }
@@ -117,16 +125,16 @@ public final class MessageFormatter {
                 : escapeForTarget(message.minecraftName(), target, current);
 
         Map<String, String> values = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : message.metadata().entrySet()) {
-            if (entry.getKey() != null && entry.getValue() != null) {
-                values.put(entry.getKey(), escapeForTarget(entry.getValue(), target, current));
-            }
-        }
         values.put("message", rawMessage);
         values.put("username", username);
         values.put("player", player);
         values.put("server", escapeForTarget(current.serverName(), target, current));
         values.put("platform", message.sourcePlatform().displayName());
+        for (Map.Entry<String, String> entry : message.metadata().entrySet()) {
+            if (entry.getKey() != null && entry.getValue() != null) {
+                values.put(entry.getKey(), escapeForTarget(entry.getValue(), target, current));
+            }
+        }
         return values;
     }
 
