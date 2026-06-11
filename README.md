@@ -104,6 +104,7 @@ build/libs/KomsomolChatBridge-1.0-SNAPSHOT.jar
 8. `discord.use_embeds_for_player_events: true` включает карточки входа, выхода, смерти и достижений.
 9. Для красивого Minecraft-чата от имени игрока заполните `discord.webhook_url`; текст задаёт `discord.webhook_message_format`.
 10. `discord.console_log_enabled: true` отправляет строки консоли в `discord.console_channel_id`.
+11. `discord.console_log_backfill_enabled: true` дочитывает стартовые строки из `logs/latest.log`.
 
 Если используете webhook для Minecraft-сообщений:
 
@@ -185,6 +186,7 @@ Telegram → Minecraft:
 - Для Discord включите `Message Content Intent`.
 - Убедитесь, что бот Discord имеет доступ к каналу.
 - Для консольного канала проверьте `discord.console_log_enabled` и `discord.console_log_levels`.
+- Если не хватает ранних строк запуска, проверьте `discord.console_log_backfill_enabled` и `discord.console_log_backfill_lines`.
 - Если старт сервера пришёл только в Telegram, проверьте лог Discord: bridge ждёт готовности JDA до 30 секунд.
 - Убедитесь, что Telegram-бот находится в группе.
 - Проверьте, что SQLite-файл доступен для записи.

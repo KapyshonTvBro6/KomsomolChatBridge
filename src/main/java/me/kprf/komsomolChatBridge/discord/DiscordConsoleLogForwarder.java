@@ -7,6 +7,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -22,12 +26,16 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class DiscordConsoleLogForwarder {
     private static final int DISCORD_MESSAGE_LIMIT = 1900;
-    private static final int MAX_QUEUE_SIZE = 500;
+    private static final int MAX_QUEUE_SIZE = 1000;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Set<String> DEFAULT_LEVELS = Set.of("INFO", "WARNING", "SEVERE");
+    private static final Pattern TIMESTAMPED_LOG_LINE = Pattern.compile("^\\[(?<time>[^ ]+) (?<level>[A-Za-z]+)](?:\\s*:?\\s*)(?<message>.*)$");
+    private static final Pattern UNTYPED_WARNING_LINE = Pattern.compile("^(?<level>WARNING|ERROR|INFO):\\s*(?<message>.*)$");
 
     private final JavaPlugin plugin;
     private final Supplier<BridgeConfig> configSupplier;
@@ -51,11 +59,15 @@ public final class DiscordConsoleLogForwarder {
         this.errorLogger = errorLogger == null ? (message, throwable) -> { } : errorLogger;
     }
 
-    public synchronized void start() {
+    public synchronized void start(boolean backfillConsoleLog) {
         stop();
         BridgeConfig.DiscordSettings settings = configSupplier.get().discord();
         if (!settings.consoleLogEnabled() || !discordBridgeClient.isConsoleConfigured()) {
             return;
+        }
+
+        if (backfillConsoleLog) {
+            backfillLatestLog(settings);
         }
 
         handler = new ForwardingHandler();
@@ -92,6 +104,69 @@ public final class DiscordConsoleLogForwarder {
             queuedLines.incrementAndGet();
         }
         queue.offer(line);
+    }
+
+    private void backfillLatestLog(BridgeConfig.DiscordSettings settings) {
+        if (!settings.consoleLogBackfillEnabled() || settings.consoleLogBackfillLines() < 1) {
+            return;
+        }
+
+        Path latestLogPath = latestLogPath();
+        if (!Files.isRegularFile(latestLogPath)) {
+            return;
+        }
+
+        try {
+            List<String> lines = Files.readAllLines(latestLogPath, StandardCharsets.UTF_8);
+            int startIndex = Math.max(0, lines.size() - settings.consoleLogBackfillLines());
+            for (int index = startIndex; index < lines.size(); index++) {
+                ParsedLogLine parsed = parseBackfillLine(lines.get(index));
+                if (parsed != null && levelAllowed(parsed.level(), settings)) {
+                    enqueue(format(parsed.time(), parsed.level(), "Server", parsed.message(), settings));
+                }
+            }
+        } catch (IOException exception) {
+            errorLogger.accept("Не удалось прочитать logs/latest.log для Discord console backfill.", exception);
+        }
+    }
+
+    private Path latestLogPath() {
+        Path dataFolder = plugin.getDataFolder().toPath();
+        Path pluginsFolder = dataFolder.getParent();
+        if (pluginsFolder != null && pluginsFolder.getParent() != null) {
+            return pluginsFolder.getParent().resolve("logs").resolve("latest.log");
+        }
+        return Path.of("logs", "latest.log");
+    }
+
+    private ParsedLogLine parseBackfillLine(String rawLine) {
+        if (rawLine == null || rawLine.isBlank()) {
+            return null;
+        }
+
+        Matcher timestampedMatcher = TIMESTAMPED_LOG_LINE.matcher(rawLine);
+        if (timestampedMatcher.matches()) {
+            return new ParsedLogLine(
+                    timestampedMatcher.group("time"),
+                    normalizeLevel(timestampedMatcher.group("level")),
+                    sanitize(timestampedMatcher.group("message"))
+            );
+        }
+
+        Matcher warningMatcher = UNTYPED_WARNING_LINE.matcher(rawLine);
+        if (warningMatcher.matches()) {
+            return new ParsedLogLine(
+                    LocalTime.now().format(TIME_FORMAT),
+                    normalizeLevel(warningMatcher.group("level")),
+                    sanitize(warningMatcher.group("message"))
+            );
+        }
+
+        return new ParsedLogLine(
+                LocalTime.now().format(TIME_FORMAT),
+                "INFO",
+                sanitize(rawLine)
+        );
     }
 
     private void flush() {
@@ -149,7 +224,7 @@ public final class DiscordConsoleLogForwarder {
                 return;
             }
             BridgeConfig.DiscordSettings settings = configSupplier.get().discord();
-            if (!settings.consoleLogEnabled() || !discordBridgeClient.isConsoleConfigured() || !levelAllowed(record, settings)) {
+            if (!settings.consoleLogEnabled() || !discordBridgeClient.isConsoleConfigured() || !levelAllowed(record.getLevel().getName(), settings)) {
                 return;
             }
             enqueue(format(record, settings));
@@ -172,19 +247,18 @@ public final class DiscordConsoleLogForwarder {
             loggerName = "";
         }
         return loggerName.startsWith("me.kprf.komsomolChatBridge")
-                || loggerName.startsWith("net.dv8tion")
                 || loggerName.startsWith("okhttp3")
                 || loggerName.startsWith("org.slf4j");
     }
 
-    private boolean levelAllowed(LogRecord record, BridgeConfig.DiscordSettings settings) {
+    private boolean levelAllowed(String level, BridgeConfig.DiscordSettings settings) {
         List<String> configuredLevels = settings.consoleLogLevels();
         Set<String> allowed = configuredLevels == null || configuredLevels.isEmpty()
                 ? DEFAULT_LEVELS
                 : configuredLevels.stream()
                         .map(DiscordConsoleLogForwarder::normalizeLevel)
                         .collect(java.util.stream.Collectors.toUnmodifiableSet());
-        return allowed.contains(normalizeLevel(record.getLevel().getName()));
+        return allowed.contains(normalizeLevel(level));
     }
 
     private static String normalizeLevel(String level) {
@@ -208,15 +282,26 @@ public final class DiscordConsoleLogForwarder {
             Throwable thrown = record.getThrown();
             message = message + " (" + thrown.getClass().getSimpleName() + ": " + thrown.getMessage() + ')';
         }
-        message = mentionService.sanitizeDiscordMentions(message == null ? "" : message);
+        message = sanitize(message);
 
+        return format(LocalTime.now().format(TIME_FORMAT), normalizeLevel(record.getLevel().getName()), loggerName, message, settings);
+    }
+
+    private String format(String time, String level, String loggerName, String message, BridgeConfig.DiscordSettings settings) {
         String template = settings.consoleLogFormat() == null || settings.consoleLogFormat().isBlank()
                 ? "[{time} {level}] {message}"
                 : settings.consoleLogFormat();
         return template
-                .replace("{time}", LocalTime.now().format(TIME_FORMAT))
-                .replace("{level}", normalizeLevel(record.getLevel().getName()))
+                .replace("{time}", time)
+                .replace("{level}", normalizeLevel(level))
                 .replace("{logger}", loggerName)
                 .replace("{message}", message);
+    }
+
+    private String sanitize(String message) {
+        return mentionService.sanitizeDiscordMentions(message == null ? "" : message);
+    }
+
+    private record ParsedLogLine(String time, String level, String message) {
     }
 }

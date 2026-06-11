@@ -111,6 +111,12 @@ discord:
   # Формат строки консоли.
   console_log_format: "[{time} {level}] {message}"
 
+  # Дочитывает последние строки logs/latest.log при запуске bridge.
+  console_log_backfill_enabled: true
+
+  # Сколько строк latest.log отправить при запуске bridge.
+  console_log_backfill_lines: 250
+
   # Отправляет Minecraft -> Discord через webhook от имени игрока.
   use_webhook_for_minecraft_messages: true
 

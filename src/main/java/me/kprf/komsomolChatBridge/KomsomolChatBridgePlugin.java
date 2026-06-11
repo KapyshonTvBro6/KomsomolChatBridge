@@ -76,7 +76,7 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
         createCoreServices();
         registerMinecraft();
         registerCommand();
-        startExternalClients();
+        startExternalClients(true);
         KomsomolChatBridge.setApi(new SimpleChatBridgeApi(chatBridgeService));
 
         if (bridgeConfig.systemEvents().serverStart()) {
@@ -131,7 +131,7 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
         discordConsoleLogForwarder.stop();
         discordBridgeClient.shutdown();
         telegramBridgeClient.shutdown();
-        startExternalClients();
+        startExternalClients(false);
     }
 
     public BridgeConfig bridgeConfig() {
@@ -212,9 +212,9 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
         }
     }
 
-    private void startExternalClients() {
+    private void startExternalClients(boolean backfillConsoleLog) {
         discordBridgeClient.start();
-        discordConsoleLogForwarder.start();
+        discordConsoleLogForwarder.start(backfillConsoleLog);
         telegramBridgeClient.start();
     }
 
