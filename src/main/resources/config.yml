@@ -1,0 +1,81 @@
+general:
+  debug: false
+  language: "ru"
+  server_name: "КомсомолКрафт"
+  ignore_empty_messages: true
+  max_message_length: 500
+  strip_colors_from_external: true
+  allow_links: true
+
+minecraft:
+  enabled: true
+  relay_chat: true
+  cancel_original_chat: false
+  relay_join_leave: true
+  relay_death: true
+  relay_advancements: false
+  private_receive_mode: false
+  format_from_discord: "<gray>[<blue>DS</blue>]</gray> <white>{username}</white>: <gray>{message}</gray>"
+  format_from_telegram: "<gray>[<aqua>TG</aqua>]</gray> <white>{username}</white>: <gray>{message}</gray>"
+  format_system: "<gold>{message}</gold>"
+  permission_receive_external: "komsomolbridge.receive"
+  permission_send_to_bridge: "komsomolbridge.send"
+  permission_antispam_bypass: "komsomolbridge.admin"
+
+discord:
+  enabled: true
+  bot_token: ""
+  guild_id: ""
+  channel_id: ""
+  ignore_bots: true
+  use_webhook_for_minecraft_messages: true
+  webhook_url: ""
+  webhook_avatar_url: "https://mc-heads.net/avatar/{player}/128"
+  format_from_minecraft: "**{player}**: {message}"
+  format_from_telegram: "📨 **TG | {username}**: {message}"
+  format_system: "📢 {message}"
+  relay_attachments: false
+
+telegram:
+  enabled: true
+  bot_token: ""
+  chat_id: ""
+  mode: "LONG_POLLING"
+  webhook:
+    enabled: false
+    public_url: "https://example.com/tg/webhook"
+    listen_host: "0.0.0.0"
+    listen_port: 8090
+  ignore_bots: true
+  relay_commands: false
+  format_from_minecraft: "🎮 {player}: {message}"
+  format_from_discord: "💬 DS | {username}: {message}"
+  format_system: "📢 {message}"
+
+anti_spam:
+  enabled: true
+  max_messages_per_10_seconds: 5
+  cooldown_seconds: 3
+  duplicate_window_seconds: 15
+
+loop_protection:
+  cache_size: 1000
+  cache_ttl_minutes: 30
+
+filters:
+  blacklist_words: []
+  blacklist_regex: []
+  allow_links: true
+  escape_markdown: true
+
+system_events:
+  join: true
+  quit: true
+  death: true
+  advancement: false
+  server_start: true
+  server_stop: true
+
+storage:
+  type: "sqlite"
+  sqlite_file: "plugins/KomsomolChatBridge/chatbridge.db"

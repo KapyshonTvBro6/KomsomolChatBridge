@@ -1,0 +1,41 @@
+name: KomsomolChatBridge
+version: '${version}'
+main: me.kprf.komsomolChatBridge.KomsomolChatBridgePlugin
+api-version: '${paperApiVersion}'
+load: POSTWORLD
+author: KomsomolCraft
+description: Единый мост сообщений Minecraft, Discord и Telegram для КомсомолКрафта.
+website: https://komsomolcraft.ru
+softdepend:
+  - PlaceholderAPI
+commands:
+  bridge:
+    description: Управление мостом Minecraft, Discord и Telegram.
+    usage: /bridge help
+    aliases:
+      - kbridge
+permissions:
+  komsomolbridge.admin:
+    description: Полный доступ к управлению KomsomolChatBridge.
+    default: op
+    children:
+      komsomolbridge.reload: true
+      komsomolbridge.status: true
+      komsomolbridge.mute: true
+      komsomolbridge.receive: true
+      komsomolbridge.send: true
+  komsomolbridge.reload:
+    description: Доступ к /bridge reload.
+    default: op
+  komsomolbridge.status:
+    description: Доступ к /bridge status.
+    default: op
+  komsomolbridge.mute:
+    description: Доступ к /bridge mute и /bridge unmute.
+    default: op
+  komsomolbridge.receive:
+    description: Получение сообщений из внешних платформ при приватном режиме.
+    default: true
+  komsomolbridge.send:
+    description: Отправка Minecraft-чата в bridge при включенной проверке прав.
+    default: true

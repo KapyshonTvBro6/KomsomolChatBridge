@@ -1,0 +1,46 @@
+prefix: "<gray>[<red>KomsomolBridge</red>]</gray> "
+
+commands:
+  no_permission: "<red>У вас нет прав на эту команду.</red>"
+  player_only: "<red>Эта команда доступна только игроку.</red>"
+  reloaded: "<green>Конфигурация bridge перезагружена.</green>"
+  unknown_platform: "<red>Неизвестная платформа. Используйте discord или telegram.</red>"
+  muted: "<yellow>Отправка в {platform} временно отключена.</yellow>"
+  unmuted: "<green>Отправка в {platform} снова включена.</green>"
+  test_discord: "Тестовое сообщение из Minecraft в Discord."
+  test_telegram: "Тестовое сообщение из Minecraft в Telegram."
+  test_sent: "<green>Тестовое сообщение отправлено в {platform}.</green>"
+  link_stub: "<yellow>Привязка {platform} пока подготовлена как заготовка. Эта функция будет добавлена позже.</yellow>"
+  unlink_stub: "<yellow>Отвязка аккаунтов пока подготовлена как заготовка. Эта функция будет добавлена позже.</yellow>"
+  help:
+    - "<gold>/bridge status</gold> <gray>- статус Discord, Telegram и статистика.</gray>"
+    - "<gold>/bridge reload</gold> <gray>- перезагрузка конфигов.</gray>"
+    - "<gold>/bridge test discord|telegram</gold> <gray>- тестовая отправка.</gray>"
+    - "<gold>/bridge mute discord|telegram</gold> <gray>- временно отключить направление.</gray>"
+    - "<gold>/bridge unmute discord|telegram</gold> <gray>- включить направление.</gray>"
+    - "<gold>/bridge link discord|telegram</gold> <gray>- заготовка привязки аккаунта.</gray>"
+    - "<gold>/bridge unlink</gold> <gray>- заготовка отвязки аккаунта.</gray>"
+
+status:
+  header: "<gold>Статус KomsomolChatBridge</gold>"
+  discord: "<gray>Discord:</gray> enabled=<yellow>{enabled}</yellow>, connected=<yellow>{connected}</yellow>, muted=<yellow>{muted}</yellow>"
+  telegram: "<gray>Telegram:</gray> enabled=<yellow>{enabled}</yellow>, connected=<yellow>{connected}</yellow>, muted=<yellow>{muted}</yellow>"
+  counters: "<gray>Обработано:</gray> <yellow>{processed}</yellow>, <gray>отправлено:</gray> <yellow>{sent}</yellow>, <gray>антиспам:</gray> <yellow>{spam}</yellow>, <gray>loop:</gray> <yellow>{loop}</yellow>, <gray>фильтр:</gray> <yellow>{filter}</yellow>"
+
+system:
+  server_start: "🚀 Сервер {server} запущен."
+  server_stop: "🛑 Сервер {server} выключается."
+  join: "🟢 Игрок {player} зашёл на сервер."
+  quit: "🔴 Игрок {player} вышел с сервера."
+  death: "☠️ {death_message}"
+  advancement: "🏆 Игрок {player} получил достижение {advancement}."
+
+blocked:
+  empty: "Сообщение пустое."
+  too_long: "Сообщение длиннее допустимого лимита."
+  links_denied: "Ссылки запрещены настройками bridge."
+  blacklist_word: "Сообщение содержит запрещённое слово."
+  blacklist_regex: "Сообщение заблокировано регулярным выражением."
+  rate_limit: "Слишком много сообщений за короткое время."
+  duplicate: "Повторяющееся сообщение заблокировано антиспамом."
+  loop: "Сообщение уже обработано bridge."

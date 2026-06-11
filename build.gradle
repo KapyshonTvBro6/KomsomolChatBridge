@@ -1,0 +1,69 @@
+plugins {
+    id 'java'
+}
+
+group = providers.gradleProperty('group').getOrElse('me.kprf')
+version = providers.gradleProperty('version').getOrElse('1.0.0')
+
+def paperApiVersion = '26.1.2'
+def resourceTokens = [
+        version        : version.toString(),
+        paperApiVersion: paperApiVersion
+]
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+configurations {
+    shade
+    implementation.extendsFrom(shade)
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+
+    shade 'net.dv8tion:JDA:6.0.0-rc.5'
+    shade 'com.google.code.gson:gson:2.13.1'
+    shade 'org.xerial:sqlite-jdbc:3.50.3.0'
+    shade 'org.slf4j:slf4j-simple:2.0.17'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+processResources {
+    filteringCharset = 'UTF-8'
+    inputs.properties(resourceTokens)
+    filesMatching('plugin.yml') {
+        expand(resourceTokens)
+    }
+}
+
+jar {
+    archiveBaseName = 'KomsomolChatBridge'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from {
+        configurations.shade.collect { dependency ->
+            dependency.isDirectory() ? dependency : zipTree(dependency)
+        }
+    }
+
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
