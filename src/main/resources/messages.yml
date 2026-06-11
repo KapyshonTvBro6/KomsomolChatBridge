@@ -1,17 +1,48 @@
+# ============================================================
+# KomsomolChatBridge - сообщения и тексты команд
+# ============================================================
+# Здесь можно менять русские тексты, подсказки команд и системные сообщения.
+#
+# Для Minecraft-сообщений используется MiniMessage:
+# - <red>текст</red>
+# - <green>текст</green>
+# - <gray>текст</gray>
+#
+# Не удаляйте placeholders в фигурных скобках, если хотите видеть значения:
+# {platform}, {enabled}, {connected}, {muted}, {processed}, {sent},
+# {spam}, {loop}, {filter}, {server}, {player}, {death_message}, {advancement}
+# ============================================================
+
+# Префикс добавляется к сообщениям команд bridge.
 prefix: "<gray>[<red>KomsomolBridge</red>]</gray> "
 
 commands:
+  # Нет нужного permission.
   no_permission: "<red>У вас нет прав на эту команду.</red>"
+
+  # Команда доступна только игроку, не консоли.
   player_only: "<red>Эта команда доступна только игроку.</red>"
+
+  # Ответ на /bridge reload.
   reloaded: "<green>Конфигурация bridge перезагружена.</green>"
+
+  # Платформа должна быть discord или telegram.
   unknown_platform: "<red>Неизвестная платформа. Используйте discord или telegram.</red>"
+
+  # Ответы на /bridge mute и /bridge unmute.
   muted: "<yellow>Отправка в {platform} временно отключена.</yellow>"
   unmuted: "<green>Отправка в {platform} снова включена.</green>"
+
+  # Тексты, которые отправляются командами /bridge test discord и /bridge test telegram.
   test_discord: "Тестовое сообщение из Minecraft в Discord."
   test_telegram: "Тестовое сообщение из Minecraft в Telegram."
   test_sent: "<green>Тестовое сообщение отправлено в {platform}.</green>"
+
+  # Заготовки будущей привязки аккаунтов.
   link_stub: "<yellow>Привязка {platform} пока подготовлена как заготовка. Эта функция будет добавлена позже.</yellow>"
   unlink_stub: "<yellow>Отвязка аккаунтов пока подготовлена как заготовка. Эта функция будет добавлена позже.</yellow>"
+
+  # Подсказка /bridge help.
   help:
     - "<gold>/bridge status</gold> <gray>- статус Discord, Telegram и статистика.</gray>"
     - "<gold>/bridge reload</gold> <gray>- перезагрузка конфигов.</gray>"
@@ -22,12 +53,21 @@ commands:
     - "<gold>/bridge unlink</gold> <gray>- заготовка отвязки аккаунта.</gray>"
 
 status:
+  # Заголовок /bridge status.
   header: "<gold>Статус KomsomolChatBridge</gold>"
+
+  # Строки статуса платформ.
+  # {enabled} - включено ли направление в config.yml
+  # {connected} - подключен ли клиент прямо сейчас
+  # {muted} - временно отключено ли направление командой /bridge mute
   discord: "<gray>Discord:</gray> enabled=<yellow>{enabled}</yellow>, connected=<yellow>{connected}</yellow>, muted=<yellow>{muted}</yellow>"
   telegram: "<gray>Telegram:</gray> enabled=<yellow>{enabled}</yellow>, connected=<yellow>{connected}</yellow>, muted=<yellow>{muted}</yellow>"
+
+  # Счётчики bridge.
   counters: "<gray>Обработано:</gray> <yellow>{processed}</yellow>, <gray>отправлено:</gray> <yellow>{sent}</yellow>, <gray>антиспам:</gray> <yellow>{spam}</yellow>, <gray>loop:</gray> <yellow>{loop}</yellow>, <gray>фильтр:</gray> <yellow>{filter}</yellow>"
 
 system:
+  # Системные события сервера. Эти строки отправляются во внешние чаты.
   server_start: "🚀 Сервер {server} запущен."
   server_stop: "🛑 Сервер {server} выключается."
   join: "🟢 Игрок {player} зашёл на сервер."
@@ -36,6 +76,7 @@ system:
   advancement: "🏆 Игрок {player} получил достижение {advancement}."
 
 blocked:
+  # Причины блокировки сообщений. Сейчас они используются в debug-логах.
   empty: "Сообщение пустое."
   too_long: "Сообщение длиннее допустимого лимита."
   links_denied: "Ссылки запрещены настройками bridge."

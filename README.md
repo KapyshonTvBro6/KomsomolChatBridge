@@ -77,6 +77,10 @@ build/libs/KomsomolChatBridge-1.0-SNAPSHOT.jar
 6. Запустите сервер снова.
 7. Проверьте `/bridge status`.
 
+Если `config.yml` или `messages.yml` уже были созданы старой версией без комментариев,
+остановите сервер, переименуйте их в `config.old.yml` и `messages.old.yml`, затем
+запустите сервер снова. Плагин создаст новые файлы с комментариями и примерами.
+
 ## Discord bot
 
 1. Откройте [Discord Developer Portal](https://discord.com/developers/applications).

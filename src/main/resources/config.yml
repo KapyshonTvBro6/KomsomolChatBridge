@@ -1,74 +1,214 @@
+# ============================================================
+# KomsomolChatBridge - основной конфиг
+# ============================================================
+# Этот файл создаётся автоматически при первом запуске плагина.
+# Если файл уже был создан раньше без комментариев, остановите сервер,
+# переименуйте старый config.yml в config.old.yml и запустите сервер снова.
+#
+# ВАЖНО:
+# - Не публикуйте bot_token и webhook_url в открытый доступ.
+# - Discord и Telegram можно включать/отключать независимо.
+# - Пустой bot_token/channel_id/chat_id означает, что клиент не запустится.
+# - Все HTTP/Discord/Telegram операции выполняются асинхронно.
+#
+# Поддерживаемые placeholders в форматах:
+# {message}  - текст сообщения
+# {username} - имя пользователя Discord/Telegram
+# {player}   - ник Minecraft-игрока
+# {server}   - имя сервера из general.server_name
+# {platform} - имя платформы-источника
+# ============================================================
+
 general:
+  # Включает подробные debug-сообщения в консоли сервера.
   debug: false
+
+  # Язык сообщений. Сейчас в комплекте только ru, поле оставлено для будущих языков.
   language: "ru"
+
+  # Имя сервера для системных сообщений: запуск, остановка и т.п.
+  # Пример: "КомсомолКрафт" или "KomsomolCraft Survival"
   server_name: "КомсомолКрафт"
+
+  # Не пересылать пустые сообщения.
   ignore_empty_messages: true
+
+  # Максимальная длина сообщения, которое bridge будет пересылать.
+  # Если игроки часто пишут длинные объявления, можно поднять до 1000.
   max_message_length: 500
+
+  # Удалять legacy-цвета Minecraft вида §a и &a перед отправкой во внешние чаты.
   strip_colors_from_external: true
+
+  # Глобальное разрешение ссылок. Дополнительно есть filters.allow_links ниже.
   allow_links: true
 
 minecraft:
+  # Включить Minecraft-часть bridge.
   enabled: true
+
+  # Пересылать обычный чат игроков в Discord и Telegram.
   relay_chat: true
+
+  # Отменять оригинальный Minecraft-чат после обработки.
+  # Обычно false: игроки продолжают видеть обычный чат сервера.
   cancel_original_chat: false
+
+  # Пересылать вход и выход игроков.
   relay_join_leave: true
+
+  # Пересылать сообщения о смерти.
   relay_death: true
+
+  # Пересылать advancement/достижения. Может быть шумно на больших серверах.
   relay_advancements: false
+
+  # Если true, сообщения из Discord/Telegram увидят только игроки с permission_receive_external.
   private_receive_mode: false
+
+  # Форматы Minecraft-сообщений используют MiniMessage.
+  # Документация MiniMessage: https://docs.advntr.dev/minimessage/format.html
   format_from_discord: "<gray>[<blue>DS</blue>]</gray> <white>{username}</white>: <gray>{message}</gray>"
   format_from_telegram: "<gray>[<aqua>TG</aqua>]</gray> <white>{username}</white>: <gray>{message}</gray>"
   format_system: "<gold>{message}</gold>"
+
+  # Права можно оставить пустыми строками "", если проверки не нужны.
   permission_receive_external: "komsomolbridge.receive"
   permission_send_to_bridge: "komsomolbridge.send"
   permission_antispam_bypass: "komsomolbridge.admin"
 
 discord:
+  # Включить Discord-часть bridge.
   enabled: true
+
+  # Token Discord-бота.
+  # Где взять:
+  # 1. https://discord.com/developers/applications
+  # 2. Ваше приложение -> Bot -> Reset Token/Copy Token
+  # 3. Включите Message Content Intent, иначе бот не увидит текст сообщений.
+  # Пример формата: "MTAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   bot_token: ""
+
+  # ID Discord-сервера. Сейчас поле почти не используется, но оставлено для будущих проверок.
+  # Как получить: включите Developer Mode, ПКМ по серверу -> Copy Server ID.
+  # Пример: "123456789012345678"
   guild_id: ""
+
+  # ID канала, из которого читать и куда писать сообщения.
+  # Как получить: включите Developer Mode, ПКМ по каналу -> Copy Channel ID.
+  # Пример: "123456789012345678"
   channel_id: ""
+
+  # Игнорировать сообщения других ботов, чтобы не ловить циклы и спам.
   ignore_bots: true
+
+  # Для Minecraft -> Discord отправлять сообщения через webhook от имени ника игрока.
+  # Если false или webhook_url пустой, будет обычное сообщение от Discord-бота.
   use_webhook_for_minecraft_messages: true
+
+  # Webhook URL из настроек Discord-канала: Integrations -> Webhooks.
+  # Пример: "https://discord.com/api/webhooks/1234567890/abcdef..."
   webhook_url: ""
+
+  # Аватар для webhook-сообщений Minecraft. {player} заменяется ником.
   webhook_avatar_url: "https://mc-heads.net/avatar/{player}/128"
+
+  # Форматы Discord-сообщений. Это обычный Discord Markdown.
   format_from_minecraft: "**{player}**: {message}"
   format_from_telegram: "📨 **TG | {username}**: {message}"
   format_system: "📢 {message}"
+
+  # Если true, ссылки на вложения Discord будут добавляться к тексту и уходить в Minecraft/Telegram.
   relay_attachments: false
 
 telegram:
+  # Включить Telegram-часть bridge.
   enabled: true
+
+  # Token Telegram-бота от @BotFather.
+  # Пример формата: "1234567890:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   bot_token: ""
+
+  # ID Telegram-чата/группы.
+  # Как получить:
+  # 1. Добавьте бота в группу.
+  # 2. Напишите сообщение в группе.
+  # 3. Откройте https://api.telegram.org/bot<TOKEN>/getUpdates
+  # 4. Найдите chat.id. Для супергрупп он часто начинается с -100.
+  # Пример: "-1001234567890"
   chat_id: ""
+
+  # LONG_POLLING - проще для локального сервера, не нужен публичный адрес.
+  # WEBHOOK - нужен публичный HTTPS URL и проброшенный порт.
   mode: "LONG_POLLING"
+
   webhook:
+    # Включать только если telegram.mode = "WEBHOOK".
     enabled: false
+
+    # Публичный HTTPS URL, по которому Telegram будет отправлять updates.
+    # Пример: "https://example.com/tg/webhook"
     public_url: "https://example.com/tg/webhook"
+
+    # На каком адресе и порту локально слушать webhook.
     listen_host: "0.0.0.0"
     listen_port: 8090
+
+  # Игнорировать сообщения от Telegram-ботов.
   ignore_bots: true
+
+  # Если false, сообщения Telegram, начинающиеся с "/", не пересылаются в Minecraft/Discord.
   relay_commands: false
+
+  # Форматы Telegram-сообщений. parse_mode не используется, это обычный текст.
   format_from_minecraft: "🎮 {player}: {message}"
   format_from_discord: "💬 DS | {username}: {message}"
   format_system: "📢 {message}"
 
 anti_spam:
+  # Включить ограничение частоты сообщений.
   enabled: true
+
+  # Сколько сообщений один пользователь может отправить за 10 секунд.
   max_messages_per_10_seconds: 5
+
+  # Резервное поле для будущего cooldown-уведомления.
   cooldown_seconds: 3
+
+  # Не пересылать одинаковые сообщения от одного пользователя в течение N секунд.
   duplicate_window_seconds: 15
 
 loop_protection:
+  # Сколько последних internalId хранить в памяти для защиты от циклов.
   cache_size: 1000
+
+  # Через сколько минут забывать старые ID.
   cache_ttl_minutes: 30
 
 filters:
+  # Слова, при наличии которых сообщение блокируется.
+  # Пример:
+  # blacklist_words:
+  #   - "плохое-слово"
+  #   - "spam.example"
   blacklist_words: []
+
+  # Регулярные выражения Java Pattern. Ошибочные regex будут пропущены.
+  # Пример:
+  # blacklist_regex:
+  #   - "(?i)free\\s+nitro"
+  #   - "https?://bad-site\\.example/.*"
   blacklist_regex: []
+
+  # Дополнительный переключатель ссылок именно для фильтра.
+  # Ссылки разрешены только если general.allow_links и filters.allow_links оба true.
   allow_links: true
+
+  # Экранировать Discord Markdown в пользовательском тексте.
   escape_markdown: true
 
 system_events:
+  # Какие системные события пересылать во внешние чаты.
   join: true
   quit: true
   death: true
@@ -77,5 +217,8 @@ system_events:
   server_stop: true
 
 storage:
+  # Сейчас поддерживается sqlite. Поле type оставлено, чтобы позже добавить mysql.
   type: "sqlite"
+
+  # Путь к SQLite-файлу. Относительный путь считается от папки сервера.
   sqlite_file: "plugins/KomsomolChatBridge/chatbridge.db"
