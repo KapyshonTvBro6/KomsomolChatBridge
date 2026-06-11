@@ -108,7 +108,11 @@ public final class DiscordBridgeClient {
     }
 
     public CompletableFuture<String> sendBotMessage(String text) {
-        return sendToChatChannel(channel -> channel.sendMessage(text));
+        return sendToChatChannel(settings -> settings.channelId(), "Discord channel_id пустой.", channel -> channel.sendMessage(text));
+    }
+
+    public CompletableFuture<String> sendConsoleMessage(String text) {
+        return sendToChatChannel(settings -> settings.consoleChannelId(), "Discord console_channel_id пустой.", channel -> channel.sendMessage(text));
     }
 
     public CompletableFuture<String> sendEmbed(MessageEmbed embed) {
@@ -117,10 +121,14 @@ public final class DiscordBridgeClient {
             future.completeExceptionally(new IllegalArgumentException("Discord embed пустой."));
             return future;
         }
-        return sendToChatChannel(channel -> channel.sendMessageEmbeds(embed));
+        return sendToChatChannel(settings -> settings.channelId(), "Discord channel_id пустой.", channel -> channel.sendMessageEmbeds(embed));
     }
 
-    private CompletableFuture<String> sendToChatChannel(java.util.function.Function<TextChannel, net.dv8tion.jda.api.requests.restaction.MessageCreateAction> actionFactory) {
+    private CompletableFuture<String> sendToChatChannel(
+            java.util.function.Function<BridgeConfig.DiscordSettings, String> channelIdResolver,
+            String emptyChannelMessage,
+            java.util.function.Function<TextChannel, net.dv8tion.jda.api.requests.restaction.MessageCreateAction> actionFactory
+    ) {
         CompletableFuture<String> future = new CompletableFuture<>();
         JDA current = jda;
         if (current == null) {
@@ -129,15 +137,16 @@ public final class DiscordBridgeClient {
         }
 
         BridgeConfig.DiscordSettings settings = configSupplier.get().discord();
-        if (!hasChatChannel(settings)) {
-            future.completeExceptionally(new IllegalStateException("Discord channel_id пустой."));
+        String channelId = channelIdResolver.apply(settings);
+        if (channelId == null || channelId.isBlank()) {
+            future.completeExceptionally(new IllegalStateException(emptyChannelMessage));
             return future;
         }
 
         CompletableFuture<Void> waitForReady = current.getStatus() == JDA.Status.CONNECTED
                 ? CompletableFuture.completedFuture(null)
                 : readyFuture.thenRun(() -> { }).orTimeout(30, TimeUnit.SECONDS);
-        return waitForReady.thenCompose(ignored -> sendBotMessageNow(current, settings.channelId(), actionFactory));
+        return waitForReady.thenCompose(ignored -> sendBotMessageNow(current, channelId, actionFactory));
     }
 
     private CompletableFuture<String> sendBotMessageNow(

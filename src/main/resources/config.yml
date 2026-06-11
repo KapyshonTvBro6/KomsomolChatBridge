@@ -93,6 +93,24 @@ discord:
   # Префикс команд в console_channel_id; пусто = выполнять каждое сообщение.
   console_command_prefix: ""
 
+  # Отправляет строки консоли сервера в console_channel_id.
+  console_log_enabled: true
+
+  # Как часто отправлять накопленные строки консоли в Discord.
+  console_log_refresh_seconds: 5
+
+  # Какие уровни логов отправлять в Discord.
+  console_log_levels:
+    - "INFO"
+    - "WARNING"
+    - "SEVERE"
+
+  # Оборачивает пачки консоли в Discord code block.
+  console_log_use_code_block: true
+
+  # Формат строки консоли.
+  console_log_format: "[{time} {level}] {message}"
+
   # Отправляет Minecraft -> Discord через webhook от имени игрока.
   use_webhook_for_minecraft_messages: true
 

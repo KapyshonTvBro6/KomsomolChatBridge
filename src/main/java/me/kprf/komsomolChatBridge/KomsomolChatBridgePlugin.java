@@ -15,6 +15,7 @@ import me.kprf.komsomolChatBridge.core.MessageFormatter;
 import me.kprf.komsomolChatBridge.core.MessageRouter;
 import me.kprf.komsomolChatBridge.core.RateLimitService;
 import me.kprf.komsomolChatBridge.discord.DiscordBridgeClient;
+import me.kprf.komsomolChatBridge.discord.DiscordConsoleLogForwarder;
 import me.kprf.komsomolChatBridge.discord.DiscordMessageSender;
 import me.kprf.komsomolChatBridge.discord.DiscordWebhookSender;
 import me.kprf.komsomolChatBridge.events.BridgeMessageBlockedEvent;
@@ -53,6 +54,7 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
     private MessageFilter messageFilter;
     private MessageFormatter messageFormatter;
     private DiscordBridgeClient discordBridgeClient;
+    private DiscordConsoleLogForwarder discordConsoleLogForwarder;
     private TelegramBridgeClient telegramBridgeClient;
 
     @Override
@@ -96,6 +98,9 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
         }
 
         KomsomolChatBridge.clearApi();
+        if (discordConsoleLogForwarder != null) {
+            discordConsoleLogForwarder.stop();
+        }
         if (discordBridgeClient != null) {
             discordBridgeClient.shutdown();
         }
@@ -123,6 +128,7 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
                 bridgeConfig.antiSpam().duplicateWindow()
         );
 
+        discordConsoleLogForwarder.stop();
         discordBridgeClient.shutdown();
         telegramBridgeClient.shutdown();
         startExternalClients();
@@ -184,6 +190,7 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
         MinecraftMessageSender minecraftSender = new MinecraftMessageSender(this, this::bridgeConfig);
         DiscordWebhookSender webhookSender = new DiscordWebhookSender(this::bridgeConfig);
         discordBridgeClient = new DiscordBridgeClient(this, this::bridgeConfig, chatBridgeService, getLogger()::info, this::logError);
+        discordConsoleLogForwarder = new DiscordConsoleLogForwarder(this, this::bridgeConfig, discordBridgeClient, this::logError);
         telegramBridgeClient = new TelegramBridgeClient(this::bridgeConfig, chatBridgeService, executorService, getLogger()::info, this::logError);
 
         chatBridgeService.registerSender(BridgePlatform.MINECRAFT, minecraftSender);
@@ -207,6 +214,7 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
 
     private void startExternalClients() {
         discordBridgeClient.start();
+        discordConsoleLogForwarder.start();
         telegramBridgeClient.start();
     }
 
