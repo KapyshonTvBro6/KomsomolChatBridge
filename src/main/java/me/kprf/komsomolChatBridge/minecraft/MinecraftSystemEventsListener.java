@@ -6,6 +6,8 @@ import me.kprf.komsomolChatBridge.core.BridgeMessage;
 import me.kprf.komsomolChatBridge.core.BridgePlatform;
 import me.kprf.komsomolChatBridge.core.ChatBridgeService;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -58,9 +60,10 @@ public final class MinecraftSystemEventsListener implements Listener {
         if (!config.minecraft().relayDeath() || !config.systemEvents().death()) {
             return;
         }
-        String deathMessage = event.getDeathMessage() == null
+        Component deathComponent = event.deathMessage();
+        String deathMessage = deathComponent == null
                 ? event.getEntity().getName() + " погиб."
-                : event.getDeathMessage();
+                : PlainTextComponentSerializer.plainText().serialize(deathComponent);
         sendExternalSystem("death", Map.of(
                 "player", event.getEntity().getName(),
                 "death_message", deathMessage
