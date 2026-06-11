@@ -85,15 +85,18 @@ public final class MinecraftSystemEventsListener implements Listener {
     }
 
     private void sendExternalSystem(String key, Map<String, String> placeholders) {
-        String message = messagesConfig.systemMessage(key, addServer(placeholders));
-        chatBridgeService.publish(BridgeMessage.builder(BridgePlatform.SYSTEM)
+        Map<String, String> values = addServer(placeholders);
+        String message = messagesConfig.systemMessage(key, values);
+        BridgeMessage.Builder builder = BridgeMessage.builder(BridgePlatform.SYSTEM)
                 .sourceUserName("Minecraft")
                 .plainText(message)
                 .formattedText(message)
                 .system(true)
                 .metadata("external_only", "true")
-                .metadata("source_message_id", "system:" + key + ':' + System.nanoTime())
-                .build());
+                .metadata("system_key", key)
+                .metadata("source_message_id", "system:" + key + ':' + System.nanoTime());
+        values.forEach(builder::metadata);
+        chatBridgeService.publish(builder.build());
     }
 
     private Map<String, String> addServer(Map<String, String> placeholders) {

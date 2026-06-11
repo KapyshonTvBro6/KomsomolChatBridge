@@ -100,6 +100,7 @@ build/libs/KomsomolChatBridge-1.0-SNAPSHOT.jar
 4. Вставьте значение в `discord.channel_id`.
 5. Для консольного канала вставьте отдельный ID в `discord.console_channel_id`.
 6. Для команды `/bridge discord` укажите ссылку в `discord.discord_invite_link`.
+7. Форматы старта, остановки, входа, выхода, смерти и достижений меняются в `discord.system_messages`.
 
 Если используете webhook для Minecraft-сообщений:
 
@@ -133,6 +134,7 @@ https://api.telegram.org/bot<TOKEN>/getUpdates
 5. Вставьте значение в `telegram.chat_id`.
 
 По умолчанию используется `LONG_POLLING`, это удобнее для локального Minecraft-сервера. Webhook-режим требует публичный HTTPS URL.
+Для tgbridge-стиля с `<b>...</b>` оставьте `telegram.parse_mode: "HTML"` и меняйте тексты в `telegram.system_messages`.
 
 ## Проверка
 
@@ -179,6 +181,7 @@ Telegram → Minecraft:
 - Проверьте `discord.channel_id`, `discord.console_channel_id` и `telegram.chat_id`.
 - Для Discord включите `Message Content Intent`.
 - Убедитесь, что бот Discord имеет доступ к каналу.
+- Если старт сервера пришёл только в Telegram, проверьте лог Discord: bridge ждёт готовности JDA до 30 секунд.
 - Убедитесь, что Telegram-бот находится в группе.
 - Проверьте, что SQLite-файл доступен для записи.
 - Посмотрите `/bridge status` и лог сервера.

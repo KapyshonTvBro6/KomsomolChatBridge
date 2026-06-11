@@ -105,10 +105,14 @@ public final class TelegramBridgeClient {
     }
 
     public CompletableFuture<String> sendMessage(String text, String replyToMessageId) {
+        BridgeConfig.TelegramSettings settings = configSupplier.get().telegram();
         JsonObject payload = new JsonObject();
-        payload.addProperty("chat_id", configSupplier.get().telegram().chatId());
+        payload.addProperty("chat_id", settings.chatId());
         payload.addProperty("text", text);
         payload.addProperty("disable_web_page_preview", false);
+        if (settings.parseMode() != null && !settings.parseMode().isBlank()) {
+            payload.addProperty("parse_mode", settings.parseMode());
+        }
 
         Integer replyMessageId = parseInteger(replyToMessageId);
         if (replyMessageId != null) {

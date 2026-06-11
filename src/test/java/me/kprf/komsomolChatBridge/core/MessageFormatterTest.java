@@ -10,10 +10,10 @@ class MessageFormatterTest {
         MessageFormatter formatter = new MessageFormatter();
         BridgeMessage message = BridgeMessage.builder(BridgePlatform.MINECRAFT)
                 .minecraftName("Lenin")
-                .plainText("Привет")
+                .plainText("Hello")
                 .build();
 
-        assertEquals("**Lenin**: Привет", formatter.format(message, BridgePlatform.DISCORD));
+        assertEquals("Lenin » Hello", formatter.format(message, BridgePlatform.DISCORD));
     }
 
     @Test
@@ -21,10 +21,10 @@ class MessageFormatterTest {
         MessageFormatter formatter = new MessageFormatter();
         BridgeMessage message = BridgeMessage.builder(BridgePlatform.MINECRAFT)
                 .minecraftName("Player")
-                .plainText("*важно*")
+                .plainText("*important*")
                 .build();
 
-        assertEquals("**Player**: \\*важно\\*", formatter.format(message, BridgePlatform.DISCORD));
+        assertEquals("Player » \\*important\\*", formatter.format(message, BridgePlatform.DISCORD));
     }
 
     @Test
@@ -32,10 +32,34 @@ class MessageFormatterTest {
         MessageFormatter formatter = new MessageFormatter();
         BridgeMessage message = BridgeMessage.builder(BridgePlatform.DISCORD)
                 .sourceUserName("User")
-                .plainText("<red>не инжектить")
+                .plainText("<red>no inject")
                 .build();
 
-        assertEquals("<gray>[<blue>DS</blue>]</gray> <white>User</white>: <gray>\\<red>не инжектить</gray>",
+        assertEquals("[<aqua>Discord</aqua>] User » \\<red>no inject",
                 formatter.format(message, BridgePlatform.MINECRAFT));
+    }
+
+    @Test
+    void formatsTelegramHtmlAndEscapesUserText() {
+        MessageFormatter formatter = new MessageFormatter();
+        BridgeMessage message = BridgeMessage.builder(BridgePlatform.MINECRAFT)
+                .minecraftName("Player")
+                .plainText("<hello>")
+                .build();
+
+        assertEquals("<b>[💬 Player]</b> &lt;hello&gt;", formatter.format(message, BridgePlatform.TELEGRAM));
+    }
+
+    @Test
+    void usesPlatformSpecificSystemTemplate() {
+        MessageFormatter formatter = new MessageFormatter();
+        BridgeMessage message = BridgeMessage.builder(BridgePlatform.SYSTEM)
+                .plainText("Server started")
+                .metadata("system_key", "server_start")
+                .metadata("server", "KomsomolCraft")
+                .build();
+
+        assertEquals(":white_check_mark: **Server has started**", formatter.format(message, BridgePlatform.DISCORD));
+        assertEquals("✅ <b>Сервер KomsomolCraft запущен!</b>", formatter.format(message, BridgePlatform.TELEGRAM));
     }
 }

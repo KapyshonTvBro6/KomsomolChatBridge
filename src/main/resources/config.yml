@@ -45,10 +45,23 @@ minecraft:
   # Показывает внешний чат только игрокам с permission_receive_external.
   private_receive_mode: false
 
-  # Форматы Minecraft-сообщений используют MiniMessage.
-  format_from_discord: "<gray>[<blue>DS</blue>]</gray> <white>{username}</white>: <gray>{message}</gray>"
-  format_from_telegram: "<gray>[<aqua>TG</aqua>]</gray> <white>{username}</white>: <gray>{message}</gray>"
+  # Формат Discord -> Minecraft по стилю DiscordSRV.
+  format_from_discord: "[<aqua>Discord</aqua>] {username} » {message}"
+
+  # Формат Telegram -> Minecraft по стилю tgbridge.
+  format_from_telegram: "<aqua>[TG] {username}:</aqua> {message}"
+
+  # Запасной формат системных сообщений в Minecraft.
   format_system: "<gold>{message}</gold>"
+
+  # Системные сообщения для Minecraft, если bridge отправляет их в игру.
+  system_messages:
+    server_start: "<green>Сервер {server} запущен.</green>"
+    server_stop: "<red>Сервер {server} остановлен.</red>"
+    join: "<green>{player} зашёл на сервер.</green>"
+    quit: "<red>{player} вышел с сервера.</red>"
+    death: "<gray>{death_message}</gray>"
+    advancement: "<gold>{player} получил достижение {advancement}.</gold>"
 
   # Права можно оставить пустыми строками, если проверки не нужны.
   permission_receive_external: "komsomolbridge.receive"
@@ -89,10 +102,23 @@ discord:
   # Аватар webhook-сообщений Minecraft.
   webhook_avatar_url: "https://mc-heads.net/avatar/{player}/128"
 
-  # Форматы Discord-сообщений используют обычный Discord Markdown.
-  format_from_minecraft: "**{player}**: {message}"
-  format_from_telegram: "TG | **{username}**: {message}"
+  # Формат Minecraft -> Discord по стилю DiscordSRV.
+  format_from_minecraft: "{player} » {message}"
+
+  # Формат Telegram -> Discord.
+  format_from_telegram: "TG | **{username}** » {message}"
+
+  # Запасной формат системных сообщений в Discord.
   format_system: "{message}"
+
+  # Системные сообщения Discord по стилю DiscordSRV.
+  system_messages:
+    server_start: ":white_check_mark: **Server has started**"
+    server_stop: ":octagonal_sign: **Server has stopped**"
+    join: ":arrow_right: **{player} joined the server**"
+    quit: ":arrow_left: **{player} left the server**"
+    death: ":skull: **{death_message}**"
+    advancement: ":trophy: **{player} has made the advancement {advancement}!**"
 
   # Добавляет ссылки на вложения Discord к пересылаемому тексту.
   relay_attachments: false
@@ -109,6 +135,9 @@ telegram:
 
   # LONG_POLLING проще для локального сервера, WEBHOOK требует публичный HTTPS.
   mode: "LONG_POLLING"
+
+  # HTML нужен для tgbridge-стиля с тегами <b> и <i>.
+  parse_mode: "HTML"
 
   webhook:
     # Включается только для telegram.mode = WEBHOOK.
@@ -127,10 +156,23 @@ telegram:
   # Пересылает Telegram-сообщения, которые начинаются с "/".
   relay_commands: false
 
-  # Форматы Telegram-сообщений используют обычный текст.
-  format_from_minecraft: "MC | {player}: {message}"
-  format_from_discord: "DS | {username}: {message}"
+  # Формат Minecraft -> Telegram по стилю tgbridge.
+  format_from_minecraft: "<b>[💬 {player}]</b> {message}"
+
+  # Формат Discord -> Telegram.
+  format_from_discord: "<b>[💬 DS | {username}]</b> {message}"
+
+  # Запасной формат системных сообщений в Telegram.
   format_system: "{message}"
+
+  # Системные сообщения Telegram по стилю tgbridge.
+  system_messages:
+    server_start: "✅ <b>Сервер {server} запущен!</b>"
+    server_stop: "❌ <b>Сервер {server} остановлен!</b>"
+    join: "🥳 <b>{player} зашёл на {server}</b>"
+    quit: "😕 <b>{player} покинул {server}</b>"
+    death: "☠️ <b>{death_message}</b>"
+    advancement: "🏆 <b>{player} получил достижение «{advancement}»</b>"
 
 anti_spam:
   # Включает ограничение частоты сообщений.

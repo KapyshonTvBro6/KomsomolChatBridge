@@ -6,10 +6,13 @@ import me.kprf.komsomolChatBridge.core.ChatBridgeService;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -21,6 +24,7 @@ public final class DiscordBridgeClient {
     private final Consumer<String> infoLogger;
     private final BiConsumer<String, Throwable> errorLogger;
     private volatile JDA jda;
+    private volatile CompletableFuture<Void> readyFuture = CompletableFuture.completedFuture(null);
 
     public DiscordBridgeClient(
             JavaPlugin plugin,
@@ -52,14 +56,23 @@ public final class DiscordBridgeClient {
         }
 
         shutdown();
+        CompletableFuture<Void> nextReadyFuture = new CompletableFuture<>();
+        readyFuture = nextReadyFuture;
         try {
             jda = JDABuilder.createDefault(settings.botToken())
                     .enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                     .setAutoReconnect(true)
                     .addEventListeners(new DiscordEventListener(plugin, configSupplier, chatBridgeService))
+                    .addEventListeners(new ListenerAdapter() {
+                        @Override
+                        public void onReady(ReadyEvent event) {
+                            nextReadyFuture.complete(null);
+                        }
+                    })
                     .build();
             infoLogger.accept("Discord-клиент запускается.");
         } catch (RuntimeException exception) {
+            nextReadyFuture.completeExceptionally(exception);
             errorLogger.accept("Не удалось запустить Discord-клиент.", exception);
             jda = null;
         }
@@ -67,7 +80,12 @@ public final class DiscordBridgeClient {
 
     public synchronized void shutdown() {
         JDA current = jda;
+        CompletableFuture<Void> currentReady = readyFuture;
         jda = null;
+        readyFuture = CompletableFuture.completedFuture(null);
+        if (currentReady != null && !currentReady.isDone()) {
+            currentReady.completeExceptionally(new IllegalStateException("Discord JDA остановлен."));
+        }
         if (current != null) {
             current.shutdownNow();
         }
@@ -102,7 +120,15 @@ public final class DiscordBridgeClient {
             return future;
         }
 
-        TextChannel channel = current.getTextChannelById(settings.channelId());
+        CompletableFuture<Void> waitForReady = current.getStatus() == JDA.Status.CONNECTED
+                ? CompletableFuture.completedFuture(null)
+                : readyFuture.thenRun(() -> { }).orTimeout(30, TimeUnit.SECONDS);
+        return waitForReady.thenCompose(ignored -> sendBotMessageNow(current, settings.channelId(), text));
+    }
+
+    private CompletableFuture<String> sendBotMessageNow(JDA current, String channelId, String text) {
+        CompletableFuture<String> future = new CompletableFuture<>();
+        TextChannel channel = current.getTextChannelById(channelId);
         if (channel == null) {
             future.completeExceptionally(new IllegalStateException("Discord channel_id не найден или недоступен."));
             return future;

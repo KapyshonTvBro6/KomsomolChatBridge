@@ -211,13 +211,16 @@ public final class KomsomolChatBridgePlugin extends JavaPlugin {
     }
 
     private java.util.concurrent.CompletableFuture<Void> publishExternalSystem(String messageKey) {
-        String text = messagesConfig.systemMessage(messageKey, Map.of("server", bridgeConfig.general().serverName()));
+        String serverName = bridgeConfig.general().serverName();
+        String text = messagesConfig.systemMessage(messageKey, Map.of("server", serverName));
         return chatBridgeService.publish(BridgeMessage.builder(BridgePlatform.SYSTEM)
                 .sourceUserName("KomsomolBridge")
                 .plainText(text)
                 .formattedText(text)
                 .system(true)
                 .metadata("external_only", "true")
+                .metadata("system_key", messageKey)
+                .metadata("server", serverName)
                 .metadata("source_message_id", "system:" + messageKey + ':' + System.nanoTime())
                 .build());
     }

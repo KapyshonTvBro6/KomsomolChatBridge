@@ -5,11 +5,14 @@ import me.kprf.komsomolChatBridge.core.MessageFilter;
 import me.kprf.komsomolChatBridge.core.MessageFormatter;
 
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class BridgeConfig {
     private final GeneralSettings general;
@@ -51,7 +54,7 @@ public final class BridgeConfig {
         GeneralSettings general = new GeneralSettings(
                 config.getBoolean("general.debug", false),
                 config.getString("general.language", "ru"),
-                config.getString("general.server_name", "КомсомолКрафт"),
+                config.getString("general.server_name", "KomsomolCraft"),
                 config.getBoolean("general.ignore_empty_messages", true),
                 config.getInt("general.max_message_length", 500),
                 config.getBoolean("general.strip_colors_from_external", true),
@@ -69,6 +72,7 @@ public final class BridgeConfig {
                 config.getString("minecraft.format_from_discord", MessageFormatter.FormatSettings.defaults().minecraftFromDiscord()),
                 config.getString("minecraft.format_from_telegram", MessageFormatter.FormatSettings.defaults().minecraftFromTelegram()),
                 config.getString("minecraft.format_system", MessageFormatter.FormatSettings.defaults().minecraftSystem()),
+                configSectionMap(config, "minecraft.system_messages", MessageFormatter.FormatSettings.defaults().minecraftSystemMessages()),
                 config.getString("minecraft.permission_receive_external", "komsomolbridge.receive"),
                 config.getString("minecraft.permission_send_to_bridge", "komsomolbridge.send"),
                 config.getString("minecraft.permission_antispam_bypass", "komsomolbridge.admin")
@@ -89,6 +93,7 @@ public final class BridgeConfig {
                 config.getString("discord.format_from_minecraft", MessageFormatter.FormatSettings.defaults().discordFromMinecraft()),
                 config.getString("discord.format_from_telegram", MessageFormatter.FormatSettings.defaults().discordFromTelegram()),
                 config.getString("discord.format_system", MessageFormatter.FormatSettings.defaults().discordSystem()),
+                configSectionMap(config, "discord.system_messages", MessageFormatter.FormatSettings.defaults().discordSystemMessages()),
                 config.getBoolean("discord.relay_attachments", false)
         );
 
@@ -103,12 +108,14 @@ public final class BridgeConfig {
                 optionalConfigValue(config, "telegram.bot_token", "PASTE_TELEGRAM_BOT_TOKEN_HERE"),
                 optionalConfigValue(config, "telegram.chat_id", "PASTE_TELEGRAM_CHAT_ID_HERE"),
                 config.getString("telegram.mode", "LONG_POLLING"),
+                config.getString("telegram.parse_mode", MessageFormatter.FormatSettings.defaults().telegramParseMode()),
                 webhook,
                 config.getBoolean("telegram.ignore_bots", true),
                 config.getBoolean("telegram.relay_commands", false),
                 config.getString("telegram.format_from_minecraft", MessageFormatter.FormatSettings.defaults().telegramFromMinecraft()),
                 config.getString("telegram.format_from_discord", MessageFormatter.FormatSettings.defaults().telegramFromDiscord()),
-                config.getString("telegram.format_system", MessageFormatter.FormatSettings.defaults().telegramSystem())
+                config.getString("telegram.format_system", MessageFormatter.FormatSettings.defaults().telegramSystem()),
+                configSectionMap(config, "telegram.system_messages", MessageFormatter.FormatSettings.defaults().telegramSystemMessages())
         );
 
         AntiSpamSettings antiSpam = new AntiSpamSettings(
@@ -174,6 +181,20 @@ public final class BridgeConfig {
                 || normalized.contains("example.com");
     }
 
+    private static Map<String, String> configSectionMap(FileConfiguration config, String path, Map<String, String> defaults) {
+        Map<String, String> values = new LinkedHashMap<>(defaults == null ? Map.of() : defaults);
+        ConfigurationSection section = config.getConfigurationSection(path);
+        if (section == null) {
+            return Map.copyOf(values);
+        }
+
+        for (String key : section.getKeys(false)) {
+            String value = section.getString(key, values.getOrDefault(key, ""));
+            values.put(key, value == null ? "" : value);
+        }
+        return Map.copyOf(values);
+    }
+
     public void applyToRouter(me.kprf.komsomolChatBridge.core.MessageRouter router) {
         router.setEnabled(BridgePlatform.MINECRAFT, minecraft.enabled());
         router.setEnabled(BridgePlatform.DISCORD, discord.enabled());
@@ -185,15 +206,19 @@ public final class BridgeConfig {
         return new MessageFormatter.FormatSettings(
                 general.serverName(),
                 filters.escapeMarkdown(),
+                telegram.parseMode(),
                 minecraft.formatFromDiscord(),
                 minecraft.formatFromTelegram(),
                 minecraft.formatSystem(),
+                minecraft.systemMessages(),
                 discord.formatFromMinecraft(),
                 discord.formatFromTelegram(),
                 discord.formatSystem(),
+                discord.systemMessages(),
                 telegram.formatFromMinecraft(),
                 telegram.formatFromDiscord(),
-                telegram.formatSystem()
+                telegram.formatSystem(),
+                telegram.systemMessages()
         );
     }
 
@@ -266,6 +291,7 @@ public final class BridgeConfig {
             String formatFromDiscord,
             String formatFromTelegram,
             String formatSystem,
+            Map<String, String> systemMessages,
             String permissionReceiveExternal,
             String permissionSendToBridge,
             String permissionAntispamBypass
@@ -287,6 +313,7 @@ public final class BridgeConfig {
             String formatFromMinecraft,
             String formatFromTelegram,
             String formatSystem,
+            Map<String, String> systemMessages,
             boolean relayAttachments
     ) {
     }
@@ -304,12 +331,14 @@ public final class BridgeConfig {
             String botToken,
             String chatId,
             String mode,
+            String parseMode,
             TelegramWebhookSettings webhook,
             boolean ignoreBots,
             boolean relayCommands,
             String formatFromMinecraft,
             String formatFromDiscord,
-            String formatSystem
+            String formatSystem,
+            Map<String, String> systemMessages
     ) {
         public boolean useWebhook() {
             return webhook.enabled() || "WEBHOOK".equalsIgnoreCase(mode);
